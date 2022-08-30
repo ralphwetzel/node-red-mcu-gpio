@@ -102,3 +102,9 @@ dist
 
 # TernJS port file
 .tern-port
+
+# node-red-mcu-gpio
+package-lock.json
+
+archive/
+.DS_Store

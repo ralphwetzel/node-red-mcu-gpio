@@ -1,0 +1,56 @@
+<!--
+  Copyright JS Foundation and other contributors, http://js.foundation
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+
+<!--
+    Adaptations to node-red-mcu by @ralphwetzel
+    https://github.com/ralphwetzel/node-red-mcu-gpio
+    License: MIT
+-->
+
+<script type="text/html" data-help-name="mcu-gpio in">
+    <p>Input node for Raspberry Pi & ESP. Generates a <code>msg.payload</code> with either a
+    0 or 1 depending on the state of the input pin.</p>
+    <h3>Outputs</h3>
+    <dl class="message-properties">
+        <dt>payload <span class="property-type">number</span></dt>
+        <dd>the payload will be a 1 or a 0.</dd>
+        <dt>topic <span class="property-type">string</span></dt>
+        <dd>the topic will be set to <code>gpio/{the bcm spio number}</code>.</dd>
+    </dl>
+    <h3>Details</h3>
+    <p>You may also enable the input pullup resistor or the pulldown resistor for RPi.</p>
+    <p>Requires the RPi.GPIO python library version 0.5.10 (or better) in order to work with RPI.</p>
+    <p>Requires the Moddable SDK in order to work with ESP.</p>
+</script>
+
+<script type="text/html" data-help-name="mcu-gpio out">
+    <p>Output node for Raspberry Pi & ESP. Can be used in Digital or PWM modes.</p>
+    <h3>Inputs</h3>
+    <dl class="message-properties">
+        <dt>payload <span class="property-type">number | string | boolean</span></dt>
+    </dl>
+    <h3>Details</h3>
+    <p>Digital mode - expects a <code>msg.payload</code> with either a 0 or 1 (or true or false),
+    and will set the selected physical pin high or low depending on the value passed in.</p>
+    <p>The initial value of the pin at deploy time can also be set to 0 or 1.</p>
+    <p>PWM mode - expects an input value of a number 0 - 100. It can be floating point.</p>
+    <p>PWM mode can be used to drive a servo using input values between 10 and 20 only,
+    but will accept floating point values.
+    For Raspberry Pi, the GPIO2 pin is best for this as it uses hardware to do the PWM. For better servo support
+    consider the alternative node-red-node-pi-gpiod node.</p>
+    <p>Requires the RPi.GPIO python library version 0.5.10 (or better) in order to work with RPI.</p>
+    <p>Requires the Moddable SDK in order to work with ESP.</p>
+</script>

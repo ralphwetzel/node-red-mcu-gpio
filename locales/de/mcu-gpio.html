@@ -1,0 +1,56 @@
+<!--
+  Copyright JS Foundation and other contributors, http://js.foundation
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+
+<!--
+    Adaptations to node-red-mcu by @ralphwetzel
+    https://github.com/ralphwetzel/node-red-mcu-gpio
+    License: MIT
+-->
+
+<script type="text/html" data-help-name="mcu-gpio in">
+    <p> Empfangs-Node für Raspberry Pi & ESP. Generiert eine <code>msg.payload</code> mit einem Wert von
+        0 oder 1 in Abhängigkeit vom Status des Eingabepins. </p>
+        <h3> Ausgaben </h3>
+        <dl class="message-properties">
+            <dt> payload  <span class="property-type"> Zahl </span> </dt>
+            <dd> Die Nutzdaten sind 1 oder 0. </dd>
+            <dt> topic  <span class="property-type"> Zeichenfolge </span> </dt>
+            <dd> Das Topic wird auf  <code>gpio/ { GPIO Nummer }</code> gesetzt. </dd>
+        </dl>
+        <h3> Details </h3>
+        <p> Sie können - für RPI - auch den Eingangs-Pullup-Widerstand oder den Pulldown-Widerstand aktivieren. </p>
+        <p> Erfordert die Python-Bibliothek RPi.GPIO in der Version 0.5.10 (oder besser) für RPI. </p>
+        <p> Erfordert Moddable SDK für ESP. </p>
+</script>
+
+<script type="text/html" data-help-name="mcu-gpio out">
+    <p> Ausgabe-Node für Raspberry Pi & ESP. Kann im Digital- oder PWM-Modus verwendet werden. </p>
+    <h3> Eingaben </h3>
+    <dl class="message-properties">
+        <dt> payload  <span class="property-type"> Zahl | Zeichen | Boolean </span> </dt>
+    </dl>
+    <h3> Details </h3>
+    <p> Der digitale Modus erwartet der Node eine <code>msg.payload</code> von entweder 0 oder 1 (oder false oder true)
+    und schaltet den ausgewählten physischen Pin in Abhängigkeit von dem übergebenen Wert entweder auf LOW oder HIGH. </p>
+    <p> Der Anfangswert für den Pin kann bei der Implementierung auf 0 oder 1 gesetzt werden. </p>
+    <p> Im PWM-Modus erwartet der Node einen Eingabewert mit der Zahl 0-100. Es kann ein Gleitkommazahl sein. </p>
+    <p> Der PWM-Modus kann verwendet werden, um einen Servo unter Verwendung von Eingabewerten nur zwischen 10 und 20 zu steuern,
+        akzeptiert aber auch Gleitkommawerte.</p>
+    <p> Der GPIO2-Pin eignet sich - beim Raspberry Pi - am besten dafür, da er Hardware-PWM unterstützt. Für eine bessere Servounterstützung
+        sollten Sie den alternativen Node <pre>Node-red-node-pi-gpiod</pre> berücksichtigen. </p>
+    <p> Erfordert die Python-Bibliothek RPi.GPIO in der Version 0.5.10 (oder besser) für RPI. </p>
+    <p> Erfordert Moddable SDK für ESP. </p>
+</script>

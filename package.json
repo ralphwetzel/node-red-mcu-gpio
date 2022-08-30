@@ -1,0 +1,33 @@
+{
+  "name": "@ralphwetzel/node-red-mcu-gpio",
+  "version": "0.1.0",
+  "description": "ESP GPIO In/Out nodes: Reference implementation of nodes for node-red-mcu",
+  "main": "gpio.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ralphwetzel/node-red-mcu-gpio.git"
+  },
+  "node-red": {
+    "nodes": {
+      "GPIO": "mcu-gpio.js"
+    }
+  },
+  "keywords": [
+    "Node-RED",
+    "node-red-mcu",
+    "GPIO",
+    "ESP"
+  ],
+  "author": "Ralph Wetzel",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ralphwetzel/node-red-mcu-gpio/issues"
+  },
+  "homepage": "https://github.com/ralphwetzel/node-red-mcu-gpio#readme",
+  "dependencies": {
+    "clone": "^2.1.2"
+  }
+}

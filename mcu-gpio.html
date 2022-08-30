@@ -1,0 +1,725 @@
+<!--
+    This node is based on 36-mcu-gpio
+    https://github.com/node-red/node-red-nodes/tree/master/hardware/PiGpio
+    License: Apache License
+
+    Adaptations to node-red-mcu by @ralphwetzel
+    https://github.com/ralphwetzel/node-red-mcu-gpio
+    License: MIT
+-->
+
+<style>
+    .mcu-gpio-pinTable {
+        color: #555;
+        width: 340px;
+        display: inline-table;
+        font-size: 13px;
+        height: 380px;
+        min-height: 380px;
+        max-height: 380px;
+    }
+
+    .mcu-gpio-pinTable input[type="radio"] {
+        width: auto;
+        margin: 3px 2px;
+        vertical-align: top;
+    }
+
+    .mcu-gpio-pinTable label {
+        width: auto;
+        margin: 0;
+        display: block;
+    }
+
+    .mcu-gpio-pinTable .pinTableBody {
+        width: 340px;
+        display: table-row-group;
+        line-height: 12px;
+    }
+
+    .mcu-gpio-pinTable .pinTableRow {
+        width: 340px;
+        display: table-row;
+        height: 20px;
+    }
+
+    .mcu-gpio-pinTable .pinTableCellL {
+        width: 170px;
+        height: 20px;
+        display: table-cell;
+        text-align: right;
+        padding-right: 4px;
+        vertical-align: middle;
+        border: 1px solid #444;
+    }
+
+    .mcu-gpio-pinTable .pinTableCellL label {
+        width: 170px;
+    }
+
+    .mcu-gpio-pinTable .pinTableCellR {
+        width: 170px;
+        height: 22px;
+        display: table-cell;
+        text-align: left;
+        padding-left: 4px;
+        vertical-align: middle;
+        border: 1px solid #000;
+    }
+
+    .mcu-gpio-pinTable .pinTableCellR label {
+        width: 170px;
+    }
+
+    .mcu-gpio-pinTable .pinColorPower {
+        background-color: #FECBCE;
+    }
+
+    .mcu-gpio-pinTable .pinColorGround {
+        background-color: #DDDDDD;
+    }
+
+    .mcu-gpio-pinTable .pinColorGPIO {
+        background-color: #BFEBBF;
+    }
+
+    .mcu-gpio-pinTable .pinColorDual {
+        background-color: #D0E6F4;
+    }
+
+    .mcu-gpio-pinTable .pinColorADC {
+        background-color: #D0E6F4;
+    }
+
+    .mcu-gpio-pinTable .pinColorSD {
+        background-color: #FFFDD0;
+    }
+
+    .mcu-gpio-pinTable .pinColorNC {
+        background-color: #FFFFFF;
+    }
+</style>
+
+<script type="text/html" data-template-name="mcu-gpio in">
+    <div class="form-row">
+        <label for="node-input-device"><i class="fa fa-microchip"></i> Device Type</span></label>
+        <input type="text" id="node-input-device" style="width: 352px">
+        </select>
+    </div>
+    <div class="form-row" style="min-width: 540px" id="pinTable">
+		<label><i class="fa fa-circle"></i> <span data-i18n="mcu-gpio.pinname"></span></label>
+        <div class="mcu-gpio-pinTable">
+            <div class="pinTableBody" id="pinform">
+            </div>
+        </div>
+    </div>
+    <div class="form-row">
+        <label>&nbsp;&nbsp;&nbsp;&nbsp;BCM GPIO</label>
+        <input type="text" id="node-input-pin" style="width: 352px">
+    </div>
+    <div class="form-row" id="resistorRow">
+        <label for="node-input-intype"><i class="fa fa-level-up"></i> <span data-i18n="mcu-gpio.label.resistor"></span></label>
+        <select type="text" id="node-input-intype" style="width:100px;">
+        <option value="tri" data-i18n="mcu-gpio.resistor.none"></option>
+        <option value="up" data-i18n="mcu-gpio.resistor.pullup"></option>
+        <option value="down" data-i18n="mcu-gpio.resistor.pulldown"></option>
+        </select>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span data-i18n="mcu-gpio.label.debounce"></span>
+        <input type="text" id="node-input-debounce" style="width:47px; text-align:right"/>&nbsp;mS
+    </div>
+    <div class="form-row">
+        <label>&nbsp;</label>
+        <input type="checkbox" id="node-input-read" style="display: inline-block; width: auto; vertical-align: top;">
+        <label for="node-input-read" style="width:70%;"><span data-i18n="mcu-gpio.label.readinitial"></span></label>
+    </div>
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="node-red:common.label.name"></span></label>
+        <input type="text" id="node-input-name" data-i18n="[placeholder]node-red:common.label.name">
+    </div>
+    <div class="form-tips" id="pin-tip"><span data-i18n="[html]mcu-gpio.tip.pin"></span></div>
+    <div class="form-tips"><span data-i18n="[html]mcu-gpio.tip.in"></span></div>
+</script>
+
+<script type="text/html" data-template-name="mcu-gpio out">
+    <div class="form-row">
+        <label for="node-input-device"><i class="fa fa-microchip"></i> Device Type</span></label>
+        <input type="text" id="node-input-device" style="width: 352px">
+        </select>
+    </div>
+    <div class="form-row" style="min-width: 540px">
+        <label><i class="fa fa-circle"></i> <span data-i18n="mcu-gpio.pinname"></span></label>
+        <div class="mcu-gpio-pinTable">
+            <div class="pinTableBody" id="pinform">
+            </div>
+        </div>
+    </div>
+    <div class="form-row">
+        <label>&nbsp;&nbsp;&nbsp;&nbsp;BCM GPIO</label>
+        <input type="text" id="node-input-pin" style="width: 352px">
+    </div>
+    <div class="form-row" id="node-set-pwm">
+        <label>&nbsp;&nbsp;&nbsp;&nbsp;<span data-i18n="mcu-gpio.label.type"></span></label>
+        <select id="node-input-out" style="width: 250px;">
+            <option value="out" data-i18n="mcu-gpio.digout"></option>
+            <option value="pwm" data-i18n="mcu-gpio.pwmout"></option>
+        </select>
+    </div>
+    <div class="form-row" id="node-set-tick">
+        <label>&nbsp;</label>
+        <input type="checkbox" id="node-input-set" style="display: inline-block; width: auto; vertical-align: top;">
+        <label for="node-input-set" style="width: 70%;"><span data-i18n="mcu-gpio.label.initpin"></span></label>
+    </div>
+    <div class="form-row" id="node-set-state">
+        <label for="node-input-level">&nbsp;</label>
+        <select id="node-input-level" style="width: 250px;">
+            <option value="0" data-i18n="mcu-gpio.initpin0"></option>
+            <option value="1" data-i18n="mcu-gpio.initpin1"></option>
+        </select>
+    </div>
+    <div class="form-row" id="node-set-freq">
+        <label for="node-input-freq"> <span data-i18n="mcu-gpio.label.freq"></span></label>
+        <input type="text" id="node-input-freq" placeholder="100"> Hz
+    </div>
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="node-red:common.label.name"></span></label>
+        <input type="text" id="node-input-name" data-i18n="[placeholder]node-red:common.label.name">
+    </div>
+    <div class="form-tips" id="pin-tip"><span data-i18n="[html]mcu-gpio.tip.pin"></span></div>
+    <div class="form-tips" id="dig-tip"><span data-i18n="[html]mcu-gpio.tip.dig"></span></div>
+    <div class="form-tips" id="pwm-tip"><span data-i18n="[html]mcu-gpio.tip.pwm"></span></div>
+</script>
+
+<script type="text/javascript">
+
+    function make_pin_table(id, pins, hide_pin_id) {
+
+        hide_pin_id = hide_pin_id || false;
+
+        let lines = Math.round((pins.length + 0.5) / 2);
+
+        if (lines < 1) {
+            $("#pinTable").hide();
+            return;
+        } else {
+            $("#pinTable").show();
+        }
+
+        $(".mcu-gpio-pinTable").css({
+            minHeight: `${lines * 24}px`,
+            maxheight: `${lines * 24}px`,
+            height: `${lines * 24}px`,
+        });
+
+        var self = this;
+        let pt = $(`#${id}`).empty();
+        let ptrow;
+
+        for (let i = 0; i < pins.length; i++) {
+
+            let pin = pins[i];
+
+            // <div class="pinTableRow">
+            //     <div class="pinTableCellL pinColorPower"><label>3.3V Power - 1 <input disabled type="radio" name="pins" value=""></label></div>
+            //     <div class="pinTableCellR pinColorPower"><label><input disabled type="radio" name="pins" value=""> 2 - 5V Power</label></div>
+            // </div>
+
+            if (i % 2 == 0) {
+                ptrow = $("<div>").addClass("pinTableRow").appendTo(pt);
+            }
+
+            // <div class="pinTableCellR pinColorPower"><label><input disabled type="radio" name="pins" value=""> 2 - 5V Power</label></div>
+            // <div class="pinTableCellL pinColorGPIO"><label for="pinTable-pin-7">GPIO04 - 7 <input id="pinTable-pin-7" type="radio" name="pins" value="4"></label></div>
+            // <div class="pinTableCellR pinColorDual"><label for="pinTable-pin-8"><input id="pinTable-pin-8" type="radio" name="pins" value="14"> 8 - GPIO14 - TxD</label></div>
+            // <div class="pinTableCellR pinColorGround"><label><input disabled type="radio" name="pins" value=""> 6 - Ground</label></div>
+            // <div class="pinTableCellL pinColorSD"><label>SD - 27 <input disabled type="radio" name="pins" value=""></label></div>
+
+            let ptdiv = $('<div>').addClass((i % 2 == 0) ? "pinTableCellL" : "pinTableCellR");
+
+            let color = {
+                "power": "pinColorPower",
+                "dual": "pinColorDual",
+                "gpio": "pinColorGPIO",
+                "ground": "pinColorGround",
+                "sd": "pinColorSD",
+                "adc": "pinColorADC",
+                "nc": "pinColorNC"
+            }
+            ptdiv.addClass(color[pin.type]).appendTo(ptrow);
+
+            ptl = $('<label>')
+            if (pin.type === "gpio" || pin.type === "dual") {
+                ptl.prop("for", `pinTable-pin-${i + 1}`);
+            }
+            if (pin.bold ) {
+                ptl.css({"font-weight": "bold"});
+            }
+
+            function make_label(pin, index) {
+
+                let label;
+
+                switch (pin.type) {
+                    case "power":
+                        label = `${pin.label}V Power`;
+                        break;
+                    case "ground":
+                        label = "Ground";
+                        break;
+                    case "gpio":
+                        label = pin.label ?? "";
+                        break;
+                    case "nc":
+                        label = "NC";
+                        break;
+                    case "dual":
+                        label = pin.label ?? "I/O";
+                        break;
+                    case "sd":
+                        label = pin.label ?? "Special";
+                        break;
+                    case "adc":
+                        label = pin.label ?? "ADC";
+                        break;
+                }
+
+                if (pin.type === "gpio" || pin.type === "dual") {
+
+                    let gpio;
+
+                    if (pin.value) {
+                        let v;
+                        try {
+                            v = (typeof pin.value === "number") ? pin.value : parseInt(pin.value);
+                        } catch (err) {
+                            throw `Error in config: ${err}`;
+                        }
+
+                        gpio = `GPIO${v.toLocaleString(undefined, { minimumIntegerDigits: 2, useGrouping: false })}`;
+                    }
+
+                    if (index % 2 == 0) {
+                        label = (label.length>0) ? `${label} - ${gpio}` : gpio;
+                    } else {
+                        label = (label.length>0) ? `${gpio} - ${label}` : gpio;
+                    }
+                }
+
+                if (hide_pin_id === false) {
+                    label = (index % 2 == 0) ? `${label} - ${index + 1} ` : ` ${index + 1} - ${label}`;                    
+                } else {
+                    label = (index % 2 == 0) ? `${label} ` : ` ${label}`;                    
+                }
+                return label;
+            }
+
+            let pti = $('<input type="radio" name="pins">').prop("disabled", (pin.type !== "gpio" && pin.type !== "dual"));
+            if (pin.type === "gpio" || pin.type === "dual") {
+                pti.prop('id', `pinTable-pin-${i + 1}`).val(pin.value);
+            }
+
+            // this is an ugly hack!
+            let html = pti.wrap('<div/>').parent().html();
+
+            html = (i % 2 == 0) ? (make_label(pin, i) + html) : (html + make_label(pin, i));
+            ptl.html(html).appendTo(ptdiv);
+        }
+    }
+
+    function set_table_input_handler() {
+
+        $(".input").on('change', function (event, type, value) { });
+
+        for (var i = 0; i < validPinValues.length; i++) {
+            $("#pinform input[value=" + validPinValues[i] + "]").on("change", function (evt) {
+                $("#node-input-pin").val(evt.currentTarget.value);
+                $("#node-input-pin").removeClass("input-error");
+            });
+        }
+
+        $('#pinform input').on('change', function () {
+            self.pin = $("#pinform input[type='radio']:checked").val();
+            $("#node-input-pin").val(self.pin);
+        });
+
+    }
+
+    let device_config;
+    var pinsInUse = {};
+
+    var isEnvVar = function (value) {
+        var re = /^\${([0-9a-zA-Z_]+)}$/;
+        var match = value.match(re);
+        return Boolean(match);
+    };
+    var isInt = function (value) {
+        return parseInt(value).toString() === value.trim();
+    };
+    var uncheckAll = function() {
+        for (var i=0; i< validPinValues.length; i++) {
+            $("#pinform input[value="+validPinValues[i]+"]").prop('checked', false);
+        }
+    }
+    // let validatePin = function (value) {
+    //     if (isEnvVar(value)) { return true; }
+    //     for (let i=0; i<device_config[this.device]?.pins?.length; i++) {
+    //         if (device_config[this.device].pins[i].value === value) { 
+    //             return true;
+    //         }
+    //     }
+    //     return false;
+    // }
+
+
+    $.getJSON('mcu-gpio/tester')
+    .done(function (data) {
+
+        // { 
+        //     device_id: {
+        //         label: <stringY,
+        //         hide_pin_id: <boolean>,
+        //         pins: [ {} ]
+        //     }
+        // }
+
+        device_config = data;
+
+        RED.nodes.registerType('mcu-gpio in', {
+            category: 'MCU',
+            color: '#a6bbcf',
+            defaults: {
+                name: { value: "" },
+                pin: {
+                    value: "", required: true, validate: function (value) {
+                        if (isEnvVar(value)) { return true; }
+                        for (let i = 0; i < device_config[this.device]?.pins?.length; i++) {
+                            if (device_config[this.device].pins[i].value == value) {
+                                return true;
+                            }
+                        }
+                        return false;
+                    }
+                },
+                intype: { value: "tri" },
+                debounce: { value: "25" },
+                read: { value: false },
+                device: { value: "rpi" }
+            },
+            inputs: 0,
+            outputs: 1,
+            icon: 'font-awesome/fa-microchip',
+            info: function () {
+                if (Object.keys(pinsInUse).length !== 0) {
+                    return "**Pins in use** : " + Object.keys(pinsInUse);
+                }
+                else { return ""; }
+            },
+            label: function () {
+
+                let self = this;
+                var suf = "";
+                if (self.intype === "up") { suf = " ↑" }
+                if (self.intype === "down") { suf = " ↓" }
+                return self.name || "GPIO: " + self.pin + suf;
+            },
+            paletteLabel: "GPIO In",
+            labelStyle: function () {
+                return this.name ? "node_label_italic" : "";
+            },
+            outputLabels: function () { return "GPIO" + this.pin; },
+            oneditprepare: function () {
+
+                let self = this;
+
+                if (!self.device in device_config) {
+                    throw ("Unknown device!")
+                }
+
+                // Top typedInput to select the device type
+                let devs = [];
+                for (let key in device_config) {
+                    devs.push({value: key, label: device_config[key].label ?? key});
+                }
+
+                $("#node-input-device").typedInput({
+                    types: [
+                        {
+                            value: "device",
+                            options: devs
+                        }
+                    ]
+                })
+
+                // Pin / GPIO table
+                make_pin_table("pinform", device_config[self.device].pins, device_config[self.device].hide_pin_id ?? false);
+                if (device_config[self.device].hide_resistor === true) {
+                    $("#resistorRow").hide();
+                }
+
+                var pinnow = self.pin;
+                var pintip = self._("mcu-gpio.tip.pin");
+                var pinname = self._("mcu-gpio.pinname");
+                var alreadyuse = self._("mcu-gpio.alreadyuse");
+                var alreadyset = self._("mcu-gpio.alreadyset");
+
+                $.getJSON('mcu-gpio/pins/' + self.id, function (data) {
+                    pinsInUse = data || {};
+                    // console.log(pintip);
+                    // console.log(data);
+                    // console.log(Object.keys(data));
+
+                    let p = "";
+                    for (let key in data) {
+                        if (key.length > 0) {
+                            p += (p.length > 0) ? `, ${key}` : `${key}`;
+                        }
+                    }
+
+                    $('#pin-tip').html(pintip + p);
+                });
+
+
+                if (self.pin > 0) {
+                    $(`#pinform input[value=${self.pin}]`).prop('checked', true)
+                }
+
+                $("#node-input-pin").on("change", function () {
+                    var pinnew = $("#node-input-pin").val();
+                    if (pinnew && isInt(pinnew) && validPinValues.includes(pinnew)) {
+                        $("#pinform input[value=" + pinnew + "]").prop('checked', true);
+                    } else {
+                        uncheckAll();
+                    }
+                    if ((pinnew) && (pinnew !== pinnow)) {
+                        if (pinsInUse.hasOwnProperty(pinnew)) {
+                            RED.notify(pinname + " " + pinnew + " " + alreadyuse, "warn");
+                        }
+                        pinnow = pinnew;
+                    }
+                });
+                $("#node-input-intype").on("change", function () {
+                    var newtype = $("#node-input-intype").val();
+                    if ((pinsInUse.hasOwnProperty(pinnow)) && (pinsInUse[pinnow] !== newtype)) {
+                        RED.notify(pinname + " " + pinnow + " " + alreadyset + " " + pinsInUse[pinnow], "error");
+                    }
+                });
+
+                $("#node-input-device").on("change", function (event, type, value) {
+                    // let dev  = $("#node-input-device").val();
+                    // if (dev != self.device) {
+                    //     self.device = dev;
+                    //     flag_modified = true;                        
+                    // }
+                    // console.log(self.device);
+                    if (value in device_config) {
+                        make_pin_table("pinform", device_config[value].pins, device_config[value].hide_pin_id ?? false);
+                        if (device_config[value].hide_resistor === true) {
+                            $("#resistorRow").hide();
+                        } else {
+                            $("#resistorRow").show();
+                        }
+                        if (self.pin > 0) {
+                            $(`#pinform input[value=${self.pin}]`).prop('checked', true)
+                        }
+                        set_table_input_handler();
+                    }
+
+                });
+
+                set_table_input_handler();
+
+            },
+        });
+
+        RED.nodes.registerType('mcu-gpio out', {
+            category: 'MCU',
+            color: '#a6bbcf',
+            defaults: {
+                name: { value: "" },
+                pin: {
+                    value: "", required: true, validate: function (value) {
+                        if (isEnvVar(value)) { return true; }                        
+                        for (let i = 0; i < device_config[this.device]?.pins?.length; i++) {
+                            if (device_config[this.device].pins[i].value == value) {
+                                return true;
+                            }
+                        }
+                        return false;
+                    }
+                },
+                set: { value: "" },
+                level: { value: "0" },
+                freq: { value: "" },
+                out: { value: "out" },
+                device: { value: "rpi" }
+            },
+            inputs: 1,
+            outputs: 0,
+            icon: 'font-awesome/fa-microchip',
+            info: function () {
+                if (Object.keys(pinsInUse).length !== 0) {
+                    return "**Pins in use** : " + Object.keys(pinsInUse);
+                }
+                else { return ""; }
+            },
+            align: "right",
+            label: function () {
+                let self = this;
+                let p = self.pin;
+                if (self.out === "pwm") { return self.name || "PWM: " + p; }
+                else if (self.out === "ser") { return self.name || "Servo: " + p; }
+                else {
+                    let suf = "";
+                    if (self.set == true) { suf = (self.level === "1") ? " ¹" : " ₀"; }
+                    return self.name || "GPIO: " + p + suf;
+                }
+            },
+            paletteLabel: "GPIO Out",
+            labelStyle: function () {
+                return this.name ? "node_label_italic" : "";
+            },
+            inputLabels: function () { return "GPIO" + this.pin; },
+            oneditprepare: function () {
+
+                let self = this;
+
+                if (!self.device in device_config) {
+                    throw ("Unknown device!")
+                }
+
+                // Top typedInput to select the device type
+                let devs = [];
+                for (let key in device_config) {
+                    devs.push({value: key, label: device_config[key].label ?? key});
+                }
+
+                $("#node-input-device").typedInput({
+                    types: [
+                        {
+                            value: "device",
+                            options: devs
+                        }
+                    ]
+                })
+
+                // Pin / GPIO table
+                make_pin_table("pinform", device_config[self.device].pins, device_config[self.device].hide_pin_id ?? false);
+                if (device_config[self.device].hide_resistor === true) {
+                    $("#resistorRow").hide();
+                }
+
+                let pinnow = this.pin;
+                let pintip = this._("mcu-gpio.tip.pin");
+                let pinname = this._("mcu-gpio.pinname");
+                let alreadyuse = this._("mcu-gpio.alreadyuse");
+                let alreadyset = this._("mcu-gpio.alreadyset");
+                if (!$("#node-input-out").val()) { $("#node-input-out").val("out"); }
+
+                $.getJSON('mcu-gpio/pins/' + self.id, function (data) {
+                    pinsInUse = data || {};
+                    // console.log(pintip);
+                    // console.log(data);
+                    // console.log(Object.keys(data));
+
+                    let p = "";
+                    for (let key in data) {
+                        if (key.length > 0) {
+                            p += (p.length > 0) ? `, ${key}` : `${key}`;
+                        }
+                    }
+
+                    $('#pin-tip').html(pintip + p);
+                });
+
+
+                if (self.pin > 0) {
+                    $(`#pinform input[value=${self.pin}]`).prop('checked', true)
+                }
+
+                $("#node-input-pin").on("change", function () {
+                    var pinnew = $("#node-input-pin").val();
+                    if (pinnew && isInt(pinnew) && validPinValues.includes(pinnew)) {
+                        $("#pinform input[value=" + pinnew + "]").prop('checked', true);
+                    } else {
+                        uncheckAll();
+                    }
+                    if ((pinnew) && (pinnew !== pinnow)) {
+                        if (pinsInUse.hasOwnProperty(pinnew)) {
+                            RED.notify(pinname + " " + pinnew + " " + alreadyuse, "warn");
+                        }
+                        pinnow = pinnew;
+                    }
+                });
+                $("#node-input-intype").on("change", function () {
+                    var newtype = $("#node-input-intype").val();
+                    if ((pinsInUse.hasOwnProperty(pinnow)) && (pinsInUse[pinnow] !== newtype)) {
+                        RED.notify(pinname + " " + pinnow + " " + alreadyset + " " + pinsInUse[pinnow], "error");
+                    }
+                });
+
+                $("#node-input-device").on("change", function (event, type, value) {
+                    // let dev  = $("#node-input-device").val();
+                    // if (dev != self.device) {
+                    //     self.device = dev;
+                    //     flag_modified = true;                        
+                    // }
+                    // console.log(self.device);
+                    if (value in device_config) {
+                        make_pin_table("pinform", device_config[value].pins, device_config[value].hide_pin_id ?? false);
+                        if (device_config[value].hide_resistor === true) {
+                            $("#resistorRow").hide();
+                        } else {
+                            $("#resistorRow").show();
+                        }
+                        if (self.pin > 0) {
+                            $(`#pinform input[value=${self.pin}]`).prop('checked', true)
+                        }
+                        set_table_input_handler();
+                    }
+
+                });
+
+                set_table_input_handler();
+
+
+                var hidestate = function () {
+                    if ($("#node-input-out").val() === "pwm") {
+                        $('#node-set-tick').hide();
+                        $('#node-set-state').hide();
+                        $('#node-input-set').prop('checked', false);
+                        $("#dig-tip").hide();
+                        $("#pwm-tip").show();
+                        $('#node-set-freq').show();
+                    }
+                    else {
+                        $('#node-set-tick').show();
+                        $("#dig-tip").show();
+                        $("#pwm-tip").hide();
+                        $('#node-set-freq').hide();
+                    }
+                };
+                $("#node-input-out").on("change", function () { hidestate(); });
+                hidestate();
+
+                var setstate = function () {
+                    if ($('#node-input-set').is(":checked")) {
+                        $("#node-set-state").show();
+                    } else {
+                        $("#node-set-state").hide();
+                    }
+                };
+                $("#node-input-set").on("change", function () { setstate(); });
+                setstate();
+
+                // $('#pinform input').on('change', function () {
+                //     this.pin = $("#pinform input[type='radio']:checked").val();
+                //     $("#node-input-pin").val(this.pin);
+                // });
+            }
+        });
+
+
+    })
+    .fail(function() {
+        console.error("mcu-gpio: Failed to connect to runtime module.")
+    })
+</script>
