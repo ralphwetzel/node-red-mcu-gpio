@@ -56,8 +56,8 @@ let device_config = {
             { type: "gpio", value: 21 },
         ]
     },
-    "m5light": {
-        label: "M5Atom Light",
+    "m5lite": {
+        label: "M5Atom Lite",
         // hide_resistor: true,
         baseline: "esp_pico_d4",
         bold: true,
